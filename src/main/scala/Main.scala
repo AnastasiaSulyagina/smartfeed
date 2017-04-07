@@ -1,5 +1,6 @@
 import containers.{FeatureVector, Sample}
 import models.{ListMLEModel, ListNetModel}
+import parsing.{FeatureExtractor, OhsumedParser}
 
 /**
   * Created by anastasia.sulyagina
@@ -10,8 +11,14 @@ object Main {
   *   'The Evaluation Tool in LETOR' provided by Jun Xu, Tie-Yan Liu, and Hang Li
   */
   def main(args: Array[String]): Unit = {
+    FeatureExtractor.loadData()
+    //print(data.toString())
+    //testOhsumed()
+  }
+
+  def testOhsumed(): Unit = {
     val train = OhsumedParser.parse("/Users/anastasia/Development/smartfeed/src/data/1/train.txt")
-    val test = OhsumedParser.parseTest("/Users/anastasia/Development/smartfeed/src/data/1/vali.txt")
+    val test = OhsumedParser.parseTest("/Users/anastasia/Development/smartfeed/src/data/1/test.txt")
     withListMLE(train, test)
     withListNet(train, test)
   }

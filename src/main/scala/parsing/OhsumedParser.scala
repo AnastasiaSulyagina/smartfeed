@@ -1,3 +1,5 @@
+package parsing
+
 import containers.{FeatureVector, Sample}
 
 import scala.io.Source
