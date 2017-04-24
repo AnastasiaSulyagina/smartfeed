@@ -3,6 +3,9 @@ package models
 import java.io.{BufferedWriter, FileWriter}
 
 import containers.{FeatureVector, Sample}
+import evaluation.Metrics
+
+import scala.collection.mutable
 
 /**
   * Created by anastasia.sulyagina
@@ -22,18 +25,29 @@ trait RankingModel {
       case (value: Double, grad: Double) => value - grad * learningRate
     }
 
-  def rank(fvv: List[FeatureVector]): Unit = {
-    println("Ranking in progress")
-    val bw = new BufferedWriter(new FileWriter(modelName + "_result.txt"))
+  private def getMetrics(scorePerm: List[Int], labels: List[Int]) =
+    List(5, 10, 30, 50).map(x => (x, Metrics.NDCG(x, scorePerm, labels))) :+ (-1, Metrics.AP(scorePerm, labels))
 
-    fvv.foreach(fv => {
+  def rank(path: String, fvv: List[FeatureVector]): List[Double] = {
+    //print("In progress: " + path.split("/").last)
+    //val fw = new FileWriter(path + "/" + modelName + "_result.txt")
+
+    val scores = fvv.map(fv => {
       var score = 0.0
       for (j <- fv.fvals.indices) {
         score += fv.fvals(j) * parameters(j)
       }
-      bw.write(score.toString + "\n")
+      score
     })
-    bw.close()
-    //testFvv.sortBy(_.label)
+    val labels = fvv.map(_.label.toInt)
+    val scorePerm = scores.zipWithIndex.sortBy(x => -x._1).unzip._2
+    //scores.foreach(score => fw.write(score.toString + "\n"))
+
+    //fw.close()
+    val metrics = getMetrics(scorePerm, labels)
+    metrics.foreach{case (n, x) => if (n == -1) print(f"  AP: $x%1.4f") else print(f"  NDCG@$n: $x%1.4f")}
+    print(s"   size: ${scores.size}")
+    println()
+    metrics.map(_._2)
   }
 }

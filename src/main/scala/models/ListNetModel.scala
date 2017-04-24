@@ -18,7 +18,6 @@ class ListNetModel extends RankingModel {
     parameters = List.fill(samples.head.data.head.fcount)(0.0)
 
     for (iter_num <- 1 to iterations){
-      println(iter_num)
       for (sample <- samples) {
         val gradient = calculateGradient(sample.data, parameters)
         parameters = updateParameters(parameters, gradient)

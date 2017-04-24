@@ -1,5 +1,7 @@
 package parsing
 
+import java.sql.Date
+
 import org.apache.spark.sql.Row
 
 /**
@@ -42,6 +44,8 @@ object Parser {
 
     def getRowOpt(n: String) = getOpt[Row](n)
 
+    def getDate(n: String) = r.getAs[Date](n)
+
     def isNullAt(n: String) = r.isNullAt(r.fieldIndex(n))
   }
   // Helper functions for filtering
@@ -51,6 +55,7 @@ object Parser {
 
   def getEntry(r: Row): Entry =
     new Entry(
+      r.getDate("date"),
       getInstanceId(r.getRow("instanceId")),
       getAudit(r.getRowOpt("audit")),
       getMetadata(r.getRow("metadata")),
@@ -193,6 +198,7 @@ object Parser {
 case class TestEntry(audit: Option[Audit])
 
 case class Entry(
+  date: Date,
   instanceId: InstanceId,
   audit: Option[Audit],
   metadata: Metadata,
