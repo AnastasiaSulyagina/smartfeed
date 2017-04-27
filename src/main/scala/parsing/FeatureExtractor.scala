@@ -29,13 +29,13 @@ object FeatureExtractor {
 
   private def getfeedbackScore(feedback: Seq[Feedback]): String =
     feedback.map(x => x.etype match {
-      case Some("Commented") => 3 * x.count.getOrElse(1)
-      case Some("ReShared") => 3
+      case Some("Commented") => 0//3 * x.count.getOrElse(1)
+      case Some("ReShared") => 1
       case Some("Liked") => 1
-      case Some("Clicked") => 2 * x.count.getOrElse(1)
-      case Some("Disliked") => -2
+      case Some("Clicked") => if (x.count.getOrElse(0) > 1) 1 else 0//2 * x.count.getOrElse(1)
+      case Some("Disliked") => -1
       case Some("Ignored") => 0
-      case Some("Viewed") => 2 * x.count.getOrElse(1)
+      case Some("Viewed") => if (x.count.getOrElse(0) > 1) 1 else 0//2 * x.count.getOrElse(1)
       case _ => 0
     }).sum.toString
 
@@ -118,7 +118,7 @@ object FeatureExtractor {
   // Weights
     getFriendsReaction(entry.audit.flatMap(_.weights)) + ',' +
     entry.audit.flatMap(_.weights).flatMap(_.ctr_high).format+ ',' +
-    //entry.audit.flatMap(_.weights).flatMap(_.ctr_negative).format + ',' +
+    entry.audit.flatMap(_.weights).flatMap(_.ctr_negative).format + ',' +
     entry.audit.flatMap(_.weights).flatMap(_.ctr_gender).format + ',' +
     entry.audit.flatMap(_.weights).flatMap(_.isFavorite).format + ',' +
     //entry.audit.flatMap(_.weights).flatMap(_.x_ActorsRelations).format + ',' +

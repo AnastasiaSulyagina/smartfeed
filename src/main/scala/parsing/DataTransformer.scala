@@ -12,7 +12,7 @@ import org.apache.spark.sql.SparkSession
   */
 object DataTransformer {
 
-  FileSystemHelper.deleteAllFiles("/Users/anastasia/Development/smartfeed/data/grouped")
+  FileSystemHelper.deleteAllDirs("/Users/anastasia/Development/smartfeed/data/grouped")
 
   private val spark = SparkSession
     .builder()

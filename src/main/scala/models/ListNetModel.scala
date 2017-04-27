@@ -35,7 +35,8 @@ class ListNetModel extends RankingModel {
 
     for (i <- fvv.indices) {
       fvv(i).fvals.zipWithIndex.foreach{
-        case (x, ind) => grad(ind) += probZ(i) * x - probY(i) * x
+        case (x, ind) =>
+          grad(ind) += probZ(i) * x - probY(i) * x
       }}
     grad.toList
   }
