@@ -27,7 +27,7 @@ object FeatureExtractor {
   private val rootLogger = Logger.getRootLogger
   rootLogger.setLevel(Level.ERROR)
 
-  private def getfeedbackScore(feedback: Seq[Feedback]): String =
+  /*private def getfeedbackScore(feedback: Seq[Feedback]): String =
     feedback.map(x => x.etype match {
       case Some("Commented") => 0//3 * x.count.getOrElse(1)
       case Some("ReShared") => 1
@@ -37,7 +37,23 @@ object FeatureExtractor {
       case Some("Ignored") => 0
       case Some("Viewed") => if (x.count.getOrElse(0) > 1) 1 else 0//2 * x.count.getOrElse(1)
       case _ => 0
-    }).sum.toString
+    }).sum.toString*/
+
+  private def getfeedbackScore(feedback: Seq[Feedback]): String =
+    if (feedback.map(_.etype).contains(Some("Disliked")))
+      "-1"
+    else if (feedback.map(_.etype).contains(Some("Liked")))
+      "1"
+    else "0"
+    /*feedback.map(x => x.etype match {
+      case Some("Commented") => 0//3 * x.count.getOrElse(1)
+      case Some("ReShared") => 1
+      case Some("Liked") => 1
+      case Some("Clicked") => if (x.count.getOrElse(0) > 1) 1 else 0//2 * x.count.getOrElse(1)
+      case Some("Disliked") => -1
+      case Some("Viewed") => if (x.count.getOrElse(0) > 1) 1 else 0//2 * x.count.getOrElse(1)
+      case _ => 0
+    }).max.toString*/
 
   private def getUserOwnerComments(counters: Option[Counters]) =
     counters match {
@@ -98,7 +114,7 @@ object FeatureExtractor {
     def format: String = x.getOrElse(0).toString
   }
 
-  def firstDay = new SimpleDateFormat("dd-MM-yyyy").parse("01-11-2016").toInstant.toEpochMilli
+  def firstDay = new SimpleDateFormat("dd-MM-yyyy").parse("15-11-2016").toInstant.toEpochMilli
 
   def getListOfFiles(dir: String):List[File] = {
     val d = new File(dir)
@@ -158,12 +174,12 @@ object FeatureExtractor {
     getAgeDiff(entry.user, entry.owner) + ',' +
     getfeedbackScore(entry.feedback.get) + '\n'
 
-  def loadData(dataDir: String = "/Users/anastasia/MailCloud/testdataset/") =
+  def loadData(dataDir: String = "/Users/anastasia/MailCloud/2/") =
     spark
       .readStream
-      .schema(spark.read.load(dataDir + "date=2016-11-01").schema)
+      .schema(spark.read.load(dataDir + "date=2016-11-15").schema) // 15
       .parquet(dataDir)
-      .filter(x => Parser.getId(x) % 157 == 1 && Parser.isFeedbackPresent(x))
+      .filter(x => Parser.getId(x) % 77 == 1 && Parser.isFeedbackPresent(x))
       .writeStream.foreach(
       new ForeachWriter[Row] {
         val filePath = "/Users/anastasia/Development/smartfeed/data/features/"

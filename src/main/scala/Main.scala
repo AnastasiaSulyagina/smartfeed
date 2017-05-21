@@ -1,90 +1,87 @@
+import java.io.FileWriter
+
 import containers.{FeatureVector, Sample}
-import evaluation.Metrics
-import models.{ListMLEModel, ListNetModel}
+import evaluation.{Evaluation, Metrics}
+import models._
 import parsing._
 
 import scala.collection.mutable
+import scala.io.Source
 
 /**
   * Created by anastasia.sulyagina
   */
 object Main {
   val commonModel = new ListNetModel
+  val path = "/Users/anastasia/Development/smartfeed/data/"
 
   def main(args: Array[String]): Unit = {
+
+    println("Extracting features")
     //FeatureExtractor.loadData()
     println("Grouping")
     //DataTransformer.groupByUsers()
     println("Running model")
-    testAllUsers()
-    //print(data.toString())
-    //testOhsumed()
-  }
 
-  def testAllUsers(): Unit = {
-    val data =
-      FileSystemHelper
-        .listDirs(DataLoader.dataDir)
-        .map(
-          dir => (dir.getAbsolutePath, DataLoader.loadTrain(dir.getName), DataLoader.loadTest(dir.getName)))
-        .filter(x => x._2.head.data.length > 100 && x._3.length > 50 && x._3.map(_.label).exists(x => x > 0.0))
-        .map(x => (x._2, x._3))
-    val train = data.flatMap(x => x._1)
-    val test = data.map(x => x._2)
-    val listNet = new ListNetModel
-    println("Training model")
-    listNet.trainModel(train)
-    println("Testing model")
-    val result = test.map(fv => {
-      val res = listNet.rank("all", fv)
-      (res(0), res(1), res(2), res(3), res(4))
+    val data = Evaluation.processData()
+    println(data.size)
+
+    //Evaluation.printMetrics(Evaluation.getCommonResults(new ListNetModel, data))
+    //Evaluation.printMetricsP(Evaluation.getPersonalResults(data, "RankSVM"))
+    //Evaluation.printMetricsP(Evaluation.getPersonalResults(data, "ListMLE"))
+
+    /*val users = Source.fromFile("/Users/anastasia/Development/smartfeed/data_first/users.txt")
+      .getLines()
+      .flatMap(l => l.split(",").map(_.toInt)).toList
+    /val data_better = data.zipWithIndex.filter{case (x, i) => users.contains(i)}.map(_._1)
+    val data_worse = data.zipWithIndex.filter{case (x, i) => !users.contains(i)}.map(_._1)
+    stats(data_better)
+    stats(data_worse)*/
+    DataLoader.toLetorFormat(data)
+    //Evaluation.printMetrics(Evaluation.getCommonResults(new RankSVM, data))
+    //Evaluation.printMetricsP(Evaluation.getPersonalResults(data, "ListNet"))
+    /*val sbRes: StringBuilder = new StringBuilder
+
+    Evaluation.printMetrics(data.zipWithIndex.map {
+      case ((train, test), i) =>
+        val scorePerm = (1 to test.size).map(_.toDouble).zipWithIndex.sortBy(x => -x._1).unzip._2.toList
+
+        val metrics = Evaluation.getMetrics(scorePerm, test.map(_.label.toInt)).map(_._2)
+
+        sbRes.append(metrics.map(x => f"$x%1.4f").mkString("\t") + "\t" + scorePerm.size.toString + "\t" + train.head.data.size.toString + "\n")
+        //fwPersonal.write(metrics.map(x => f"$x%1.4f").mkString("\t") + "\t" + res._1.size.toString + "\t" + train.head.data.size.toString + "\n")
+        (metrics(0), metrics(1), metrics(2), metrics(3), metrics(4), scorePerm.size)
     })
-    println(f"NDCG@5: ${result.map(_._1).sum / result.length}%1.4f" +
-      f"   NDCG@10: ${result.map(_._2).sum / result.length}%1.4f" +
-      f"   NDCG@30: ${result.map(_._3).sum / result.length}%1.4f" +
-      f"   NDCG@50: ${result.map(_._4).sum / result.length}%1.4f" +
-      f"   MAP: ${Metrics.MAP(result.map(_._5))}%1.4f")
-  }
+    //println()
+    val fwres = new FileWriter(path + "Baseline" + "_personal_r.txt")
 
-  def testUsers(): Unit = {
-    val result: List[(Double, Double, Double, Double, Double)] =
-      FileSystemHelper
-      .listDirs(DataLoader.dataDir)
-      .map(
-        dir => (dir.getAbsolutePath, DataLoader.loadTrain(dir.getName), DataLoader.loadTest(dir.getName)))
-      .filter(x => x._2.head.data.length > 100 && x._3.length > 50 && x._3.map(_.label).exists(x => x > 0.0))
-      .map{
-        case (path, train, test) =>
-          val res = withListNet(train, test, path)
-          (res(0), res(1), res(2), res(3), res(4))
-    }
-    println(f"NDCG@5: ${result.map(_._1).sum / result.length}%1.4f" +
-        f"   NDCG@10: ${result.map(_._2).sum / result.length}%1.4f" +
-        f"   NDCG@30: ${result.map(_._3).sum / result.length}%1.4f" +
-        f"   NDCG@50: ${result.map(_._4).sum / result.length}%1.4f" +
-        f"   MAP: ${Metrics.MAP(result.map(_._5))}%1.4f")
-  }
+    fwres.write(sbRes.mkString)
+*/
+    //Evaluation.printMetrics(Evaluation.getCommonResults(new RankSVM, data))
+    //Evaluation.printMetrics(Evaluation.getCommonResults(new LogisticRegression, data))
+    //
+    //Evaluation.printMetricsP(Evaluation.readPersonalResults("ListMLE"))
 
-  def testOhsumed(): Unit = {
-    val train = OhsumedParser.parse("/Users/anastasia/Development/smartfeed/src/data/1/train.txt")
-    val test = OhsumedParser.parseTest("/Users/anastasia/Development/smartfeed/src/data/1/test.txt")
-    withListMLE(train, test)
-    withListNet(train, test)
-  }
+/*
+    Evaluation.getPersonalResults(data, "ListMLE")
+    Evaluation.getPersonalResults(data, "LogisticRegression")
+    Evaluation.getPersonalResults(data, "RankSVM")
+    Evaluation.getPersonalResults(data, "ListNet")
+    Evaluation.getPersonalResults(data, "ListMLE")
+    Evaluation.printMetrics(Evaluation.getCommonResults(new LogisticRegression, data))
+    Evaluation.printMetrics(Evaluation.getCommonResults(new RankSVM, data))
 
-  def withListNet(train: List[Sample], test: List[FeatureVector], path: String = "") = {
-    val listNet = new ListNetModel
-    println("Training model")
-    listNet.trainModel(train)
-    println("Testing model")
-    listNet.rank(path, test)
-  }
+    Evaluation.getCommonResults(new ListMLEModel, data)
+    Evaluation.getCommonResults(new ListNetModel, data)
+    */
+    //Evaluation.printMetrics(Evaluation.readCommonResults("RankSVM"))
+    //Evaluation.getPersonalResults(data, "ListMLE")
+    // Evaluation.getPersonalResults(data, "LogisticRegression")
+    //Evaluation.getPersonalResults(data, "RankSVM")
 
-  def withListMLE(train: List[Sample], test: List[FeatureVector], path: String = "") = {
-    val listMLE = new ListMLEModel
-    println("Training model")
-    listMLE.trainModel(train)
-    println("Testing model")
-    listMLE.rank(path, test)
+    /*data.zipWithIndex.foreach{
+      case ((train, test), i) =>
+        println(i.toString + "\t" + train.head.data.size)
+    }*/
   }
 }

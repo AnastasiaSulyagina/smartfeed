@@ -1,6 +1,7 @@
 package models
 
 import containers.{FeatureVector, Sample}
+import gnu.trove.list.array.TDoubleArrayList
 
 import scala.collection.mutable
 import scala.math._
@@ -10,16 +11,17 @@ import scala.math._
   */
 class ListMLEModel extends RankingModel{
   override var parameters: List[Double] = _
-  override val learningRate = 0.0001
+  override val learningRate = 0.0002
   override val modelName = "ListMLE"
-  val toleranceRate = 0.02
+  val toleranceRate = 0.03
 
   override def trainModel(samples: List[Sample]): Unit = {
     parameters = List.fill(samples.head.data.head.fcount)(0.0)
     var loss: Double = 0.0
     var toStop = false
-
-    while (!toStop){
+    var it = 0
+    while (!toStop && it < 100) {
+      it += 1
       var curLoss: Double = 0.0
       for (sample <- samples) {
         val gradient = calculateGradient(sample.data, parameters)
@@ -38,24 +40,27 @@ class ListMLEModel extends RankingModel{
         loss = curLoss
       }
     }
+    println()
   }
 
   def maxIndex(l: List[Double]): Int =
     l.zipWithIndex.maxBy(_._1)._2
 
-  def calculateGradient(fvv: List[FeatureVector], newParams: List[Double]): List[Double] = {
+  def calculateGradient(fvvAll: List[FeatureVector], newParams: List[Double]): Array[Double] = {
+    val fvv = fvvAll.filter(x => scala.util.Random.nextInt(100) > 40)
     val maxScoreIndex = maxIndex(fvv.map(x => x.label))
     val expsumZ = fvv.foldLeft(0.0) ((acc, fv) => acc + exp(calculateInnerProduct(newParams, fv.fvals)))
 
     val probZ = fvv.map(fv => exp(calculateInnerProduct(newParams, fv.fvals)))
-    val grad = mutable.MutableList.fill(fvv.head.fcount)(0.0)
+    val grad = new TDoubleArrayList(fvv.head.fcount)
+    grad.fill(0, fvv.head.fcount, 0.0)
 
-    for(i <- grad.indices) {
+    for(i <- 0 until grad.size()) {
       for (j <- fvv.indices) {
-        grad(i) += fvv(j).fvals(i) * probZ(j)
+        grad.setQuick(i, fvv(j).fvals(i) * probZ(j))
       }
-      grad(i) = grad(i) / expsumZ - fvv(maxScoreIndex).fvals(i)
+      grad.setQuick(i, grad.getQuick(i) / expsumZ - fvv(maxScoreIndex).fvals(i))
     }
-    grad.toList
+    grad.toArray
   }
 }
